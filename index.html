@@ -31,9 +31,6 @@
             background-color: var(--main-bg);
             color: var(--text);
             min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
             padding: 20px;
             overflow-x: hidden;
             overflow-y: auto;
@@ -42,6 +39,7 @@
         .player-container {
             width: 100%;
             max-width: 800px;
+            margin: 0 auto;
             background-color: var(--secondary-bg);
             border: 2px solid var(--accent);
             padding: 30px;
@@ -187,6 +185,7 @@
         .song-info {
             margin-bottom: 25px;
             text-align: center;
+            overflow: hidden;
         }
 
         .song-title {
@@ -194,23 +193,20 @@
             color: var(--text);
             margin-bottom: 10px;
             white-space: nowrap;
-            overflow: hidden;
             position: relative;
             max-width: 100%;
-            will-change: transform;
             text-shadow: 0 0 3px rgba(196, 17, 17, 0.3);
         }
 
         .long-title {
             display: inline-block;
-            animation: scrollText 10s linear infinite; /* Ускорили для теста */
-            animation-play-state: paused;
+            transform: translateX(0);
+            will-change: transform;
             padding-right: 50px;
-            transform: translateZ(0); /* Аппаратное ускорение */
         }
 
         .long-title.playing {
-            animation-play-state: running;
+            animation: scrollText 10s linear infinite;
         }
 
         @keyframes scrollText {
@@ -731,7 +727,6 @@
             const albumArtImg = document.getElementById('albumArtImg');
             const glitchEffect = document.getElementById('glitchEffect');
             const lyricsContent = document.getElementById('lyrics');
-            const lyricsContainer = document.getElementById('lyricsContainer');
 
             let audioContext, analyser, audioSource;
             const audio = new Audio();
@@ -743,7 +738,6 @@
             let isDragging = false;
             let lyricsData = [];
             let lastLyricUpdate = 0;
-            let isUserScrollingLyrics = false; // Флаг для отслеживания действий пользователя
 
             const tracks = [
                 { title: "Устал", artist: "frazt", path: "./music/track1.wav", lyricsPath: "./text/track1.lrc" }
@@ -876,11 +870,7 @@
                 if (activeIndex >= 0 && activeIndex < lines.length - 1) {
                     lines[activeIndex + 1].classList.add('next');
                 }
-
-                // Прокрутка только если пользователь не взаимодействует
-                if (activeIndex >= 0 && !isDragging && !isUserScrollingLyrics) {
-                    lines[activeIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
+                // Убрана автоматическая прокрутка
             }
 
             function triggerEffect(effectName) {
@@ -1111,16 +1101,6 @@
                 progress.addEventListener('mousedown', startDragging);
                 audio.addEventListener('timeupdate', updateProgress);
                 audio.addEventListener('ended', () => isRepeat ? (audio.currentTime = 0, playTrack()) : nextTrack());
-
-                // Отслеживание взаимодействия пользователя с лирикой
-                lyricsContainer.addEventListener('scroll', () => {
-                    isUserScrollingLyrics = true;
-                    setTimeout(() => isUserScrollingLyrics = false, 2000); // 2 секунды бездействия
-                });
-                lyricsContainer.addEventListener('mousedown', () => {
-                    isUserScrollingLyrics = true;
-                    setTimeout(() => isUserScrollingLyrics = false, 2000);
-                });
 
                 document.body.addEventListener('click', () => {
                     if (!audioContext) {
