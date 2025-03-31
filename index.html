@@ -44,7 +44,7 @@
             border: 2px solid var(--accent);
             padding: 30px;
             border-radius: 12px;
-            box-shadow: 0 0 30px rgba(74, 0, 0, 0.9), inset 0 0 10px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 0 15px rgba(74, 0, 0, 0.9);
             position: relative;
         }
 
@@ -90,6 +90,7 @@
             padding-bottom: 15px;
             border-bottom: 1px dashed var(--accent);
             text-align: center;
+            position: relative;
         }
 
         .player-title {
@@ -98,17 +99,23 @@
             text-transform: uppercase;
             letter-spacing: 3px;
             position: relative;
-            text-shadow: 0 0 5px var(--highlight);
+            text-shadow: 0 0 5px var(--highlight), 0 0 10px var(--highlight); /* Красное свечение */
         }
 
-        .player-title::after {
-            content: "888";
+        /* Разбросанные "888" */
+        .eight-eight-eight {
             position: absolute;
-            font-size: 18px;
-            top: -12px;
-            right: -40px;
+            font-size: 24px;
             color: var(--highlight);
+            pointer-events: none;
+            z-index: 3;
+            text-shadow: 0 0 5px var(--highlight), 0 0 10px var(--highlight);
         }
+
+        .eight-eight-eight:nth-child(1) { top: -12px; right: -40px; }
+        .eight-eight-eight:nth-child(2) { bottom: 10px; left: 20px; }
+        .eight-eight-eight:nth-child(3) { top: 50%; right: 10px; }
+        .eight-eight-eight:nth-child(4) { bottom: 20%; left: 50%; }
 
         .album-art {
             width: 100%;
@@ -118,7 +125,6 @@
             position: relative;
             overflow: hidden;
             border: 2px solid var(--accent);
-            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5), 0 0 15px rgba(74, 0, 0, 0.7);
             border-radius: 8px;
         }
 
@@ -182,35 +188,38 @@
             border-radius: 2px;
         }
 
-.song-info {
-    margin-bottom: 25px;
-    text-align: center;
-    overflow: hidden;
-}
+        .song-info {
+            margin-bottom: 25px;
+            text-align: center;
+            overflow: hidden;
+        }
 
-.song-title {
-    font-size: 24px;
-    color: var(--text);
-    margin-bottom: 10px;
-    white-space: nowrap;
-    position: relative;
-    max-width: 100%;
-}
+        .song-title {
+            font-size: 24px;
+            color: var(--text);
+            margin-bottom: 10px;
+            white-space: nowrap;
+            position: relative;
+            max-width: 100%;
+            will-change: opacity;
+        }
 
-.long-title {
-    display: inline-block;
-    transform: translateX(0);
-    padding-right: 50px;
-}
+        .long-title {
+            display: inline-block;
+            padding-right: 50px;
+        }
 
-.long-title.playing {
-    animation: scrollText 15s linear infinite; /* Увеличили время для плавности */
-}
+        .long-title.playing {
+            will-change: opacity;
+            animation: fadeText 4s ease-in-out infinite;
+        }
 
-@keyframes scrollText {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(-100%); }
-}
+        @keyframes fadeText {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
         .song-artist {
             font-size: 18px;
             color: var(--accent);
@@ -236,7 +245,6 @@
             border: 2px solid var(--accent);
             position: relative;
             cursor: pointer;
-            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
             border-radius: 4px;
         }
 
@@ -284,13 +292,11 @@
             align-items: center;
             cursor: pointer;
             transition: all 0.2s;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
         }
 
         .control-btn:hover {
             background-color: var(--accent);
             transform: translateY(-3px);
-            box-shadow: 0 6px 15px rgba(74, 0, 0, 0.6);
         }
 
         .control-btn:active {
@@ -325,7 +331,6 @@
         .active {
             color: var(--highlight);
             border-color: var(--highlight);
-            box-shadow: 0 0 15px rgba(196, 17, 17, 0.5);
         }
 
         .playlist {
@@ -337,6 +342,7 @@
             scrollbar-width: thin;
             scrollbar-color: var(--accent) var(--secondary-bg);
             border-radius: 5px;
+            position: relative;
         }
 
         .playlist::-webkit-scrollbar {
@@ -360,6 +366,7 @@
             justify-content: space-between;
             transition: background-color 0.2s;
             font-size: 18px;
+            
         }
 
         .playlist-item:hover {
@@ -375,6 +382,8 @@
             flex-grow: 3;
             white-space: nowrap;
             text-overflow: ellipsis;
+            color: var(--text);
+            
         }
 
         .song-duration {
@@ -397,12 +406,7 @@
             scrollbar-width: thin;
             scrollbar-color: var(--accent) var(--secondary-bg);
             border-radius: 8px;
-            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
             position: relative;
-            user-select: text;
-            -webkit-user-select: text;
-            -moz-user-select: text;
-            -ms-user-select: text;
         }
 
         .lyrics-container::-webkit-scrollbar {
@@ -449,12 +453,10 @@
             color: var(--highlight);
             font-size: 22px;
             font-weight: bold;
-            text-shadow: 0 0 8px var(--highlight), 0 0 15px rgba(196, 17, 17, 0.5);
             transform: scale(1.05);
             background: rgba(74, 0, 0, 0.2);
             padding: 10px;
             border-radius: 5px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
         }
 
         .lyric-line.next {
@@ -501,127 +503,38 @@
         }
 
         @media (max-width: 768px) {
-            .player-container {
-                max-width: 100%;
-                padding: 20px;
-                box-shadow: 0 0 20px rgba(74, 0, 0, 0.8);
-            }
-
-            .album-art {
-                height: 250px;
-            }
-
-            .visualizer {
-                height: 60px;
-            }
-
-            .player-title {
-                font-size: 24px;
-            }
-
-            .player-title::after {
-                font-size: 14px;
-                right: -30px;
-            }
-
-            .song-title {
-                font-size: 18px;
-            }
-
-            .song-artist {
-                font-size: 14px;
-            }
-
-            .control-btn {
-                width: 45px;
-                height: 45px;
-            }
-
-            .play-btn {
-                width: 60px;
-                height: 60px;
-            }
-
-            .control-icon {
-                width: 20px;
-                height: 20px;
-            }
-
-            .play-icon {
-                width: 28px;
-                height: 28px;
-            }
-
-            .playlist, .lyrics-container {
-                max-height: 150px;
-            }
-
-            .time-info, .song-duration {
-                font-size: 12px;
-            }
-
-            .lyric-line.active {
-                font-size: 18px;
-            }
+            .player-container { max-width: 100%; padding: 20px; box-shadow: 0 0 10px rgba(74, 0, 0, 0.8); }
+            .album-art { height: 250px; }
+            .visualizer { height: 60px; }
+            .player-title { font-size: 24px; }
+            .eight-eight-eight { font-size: 14px; }
+            .eight-eight-eight:nth-child(1) { right: -30px; }
+            .song-title { font-size: 18px; }
+            .song-artist { font-size: 14px; }
+            .control-btn { width: 45px; height: 45px; }
+            .play-btn { width: 60px; height: 60px; }
+            .control-icon { width: 20px; height: 20px; }
+            .play-icon { width: 28px; height: 28px; }
+            .playlist, .lyrics-container { max-height: 150px; }
+            .time-info, .song-duration { font-size: 12px; }
+            .lyric-line.active { font-size: 18px; }
         }
 
         @media (max-width: 480px) {
-            .player-container {
-                padding: 15px;
-            }
-
-            .album-art {
-                height: 200px;
-            }
-
-            .visualizer {
-                height: 50px;
-            }
-
-            .player-title {
-                font-size: 20px;
-            }
-
-            .player-title::after {
-                font-size: 12px;
-                right: -25px;
-            }
-
-            .song-title {
-                font-size: 16px;
-            }
-
-            .song-artist {
-                font-size: 12px;
-            }
-
-            .control-btn {
-                width: 40px;
-                height: 40px;
-            }
-
-            .play-btn {
-                width: 50px;
-                height: 50px;
-            }
-
-            .control-icon {
-                width: 18px;
-                height: 18px;
-            }
-
-            .play-icon {
-                width: 24px;
-                height: 24px;
-            }
-
-            .playlist-item, .lyrics-container {
-                font-size: 14px;
-            }
-
-            .lyric-line.active {
-                font-size: 16px;
-            }
+            .player-container { padding: 15px; }
+            .album-art { height: 200px; }
+            .visualizer { height: 50px; }
+            .player-title { font-size: 20px; }
+            .eight-eight-eight { font-size: 12px; }
+            .eight-eight-eight:nth-child(1) { right: -25px; }
+            .song-title { font-size: 16px; }
+            .song-artist { font-size: 12px; }
+            .control-btn { width: 40px; height: 40px; }
+            .play-btn { width: 50px; height: 50px; }
+            .control-icon { width: 18px; height: 18px; }
+            .play-icon { width: 24px; height: 24px; }
+            .playlist-item, .lyrics-container { font-size: 14px; }
+            .lyric-line.active { font-size: 16px; }
         }
     </style>
 </head>
@@ -630,25 +543,23 @@
         <div class="noise" id="noise"></div>
         <div class="scanline"></div>
         <div class="glitch-effect" id="glitchEffect"></div>
-
         <div class="player-header">
             <div class="player-title">VOID PLAYER</div>
+            <div class="eight-eight-eight">888</div>
+            <div class="eight-eight-eight">888</div>
         </div>
-
+        <!-- Убрали <div id="countdown"></div> -->
         <div class="album-art" id="albumArt">
             <img id="albumArtImg" src="">
             <div class="album-art-overlay"></div>
         </div>
-
         <div class="visualizer">
             <div class="visualization-bars" id="visualizer"></div>
         </div>
-
         <div class="song-info">
             <div class="song-title" id="songTitle">Устал</div>
             <div class="song-artist" id="songArtist"></div>
         </div>
-
         <div class="progress-container">
             <div class="time-info">
                 <div id="currentTime">0:00</div>
@@ -658,7 +569,6 @@
                 <div class="progress" id="progress"></div>
             </div>
         </div>
-
         <div class="controls">
             <button class="control-btn" id="shuffleBtn" title="Shuffle">
                 <svg class="control-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -694,9 +604,7 @@
                 </svg>
             </button>
         </div>
-
         <div class="playlist" id="playlist"></div>
-
         <div class="lyrics-container" id="lyricsContainer">
             <div class="lyrics-title">Lyrics</div>
             <div id="lyrics"></div>
@@ -735,6 +643,7 @@
             let isDragging = false;
             let lyricsData = [];
             let lastLyricUpdate = 0;
+            let lastVisualizerUpdate = 0;
 
             const tracks = [
                 { title: "Устал", artist: "frazt", path: "./music/track1.wav", lyricsPath: "./text/track1.lrc" }
@@ -748,8 +657,7 @@
             ];
 
             function getRandomCover() {
-                const randomIndex = Math.floor(Math.random() * covers.length);
-                return covers[randomIndex];
+                return covers[Math.floor(Math.random() * covers.length)];
             }
 
             function formatTime(seconds) {
@@ -767,7 +675,13 @@
                 }
             }
 
-            function updateVisualizer() {
+            function updateVisualizer(timestamp) {
+                if (timestamp - lastVisualizerUpdate < 16) {
+                    if (isPlaying) requestAnimationFrame(updateVisualizer);
+                    return;
+                }
+                lastVisualizerUpdate = timestamp;
+
                 if (!audioContext || !analyser) return;
                 const dataArray = new Uint8Array(analyser.frequencyBinCount);
                 analyser.getByteFrequencyData(dataArray);
@@ -861,23 +775,14 @@
                     }
                 });
 
-                if (activeIndex > 0) {
-                    lines[activeIndex - 1].classList.add('previous');
-                }
-                if (activeIndex >= 0 && activeIndex < lines.length - 1) {
-                    lines[activeIndex + 1].classList.add('next');
-                }
-                // Убрана автоматическая прокрутка
+                if (activeIndex > 0) lines[activeIndex - 1].classList.add('previous');
+                if (activeIndex >= 0 && activeIndex < lines.length - 1) lines[activeIndex + 1].classList.add('next');
             }
 
             function triggerEffect(effectName) {
                 switch (effectName) {
-                    case 'glitch':
-                        triggerGlitchEffect();
-                        break;
-                    case 'flicker':
-                        triggerFlickerEffect();
-                        break;
+                    case 'glitch': triggerGlitchEffect(); break;
+                    case 'flicker': triggerFlickerEffect(); break;
                     case 'shake':
                         document.body.classList.add('shake');
                         setTimeout(() => document.body.classList.remove('shake'), 500);
@@ -915,11 +820,8 @@
                 albumArtImg.src = getRandomCover();
                 await loadLyrics(track.lyricsPath);
 
-                if (track.title.length > 20) {
-                    songTitle.classList.add('long-title');
-                } else {
-                    songTitle.classList.remove('long-title');
-                }
+                songTitle.classList.remove('long-title');
+                if (track.title.length > 20) songTitle.classList.add('long-title');
 
                 audio.onloadedmetadata = () => {
                     totalTimeEl.textContent = formatTime(audio.duration);
@@ -927,18 +829,11 @@
                 };
 
                 const playlistItems = document.querySelectorAll('.playlist-item');
-                playlistItems.forEach((item, i) => {
-                    item.classList.toggle('playing', i === index);
-                });
-
-                document.querySelector('.player-container').classList.add('distort');
-                setTimeout(() => document.querySelector('.player-container').classList.remove('distort'), 400);
+                playlistItems.forEach((item, i) => item.classList.toggle('playing', i === index));
             }
 
             function playTrack() {
-                if (audioContext && audioContext.state === 'suspended') {
-                    audioContext.resume();
-                }
+                if (audioContext && audioContext.state === 'suspended') audioContext.resume();
                 audio.play().then(() => {
                     isPlaying = true;
                     playIcon.classList.add('hidden');
@@ -947,7 +842,7 @@
                     songTitle.classList.add('playing');
                     triggerGlitchEffect();
                     triggerFlickerEffect();
-                    updateVisualizer();
+                    requestAnimationFrame(updateVisualizer);
                 }).catch(err => console.error("Playback error:", err));
             }
 
@@ -996,13 +891,13 @@
                 const clickX = e.offsetX;
                 const newTime = (clickX / width) * audio.duration;
                 audio.currentTime = newTime;
-                triggerGlitchEffect();
+                requestAnimationFrame(() => triggerGlitchEffect());
             }
 
             function startDragging(e) {
                 isDragging = true;
                 progress.classList.add('dragging');
-                updateProgressDragging(e);
+                requestAnimationFrame(() => updateProgressDragging(e));
                 document.addEventListener('mousemove', updateProgressDragging);
                 document.addEventListener('mouseup', stopDragging);
             }
@@ -1027,7 +922,7 @@
                 audio.currentTime = newTime;
                 document.removeEventListener('mousemove', updateProgressDragging);
                 document.removeEventListener('mouseup', stopDragging);
-                triggerGlitchEffect();
+                requestAnimationFrame(() => triggerGlitchEffect());
             }
 
             function createNoise() {
@@ -1052,10 +947,6 @@
             function triggerGlitchEffect() {
                 glitchEffect.style.animation = 'randomGlitch 0.3s forwards';
                 setTimeout(() => glitchEffect.style.animation = 'none', 300);
-                if (Math.random() < 0.3) {
-                    document.body.style.transform = `translate(${Math.random() * 3 - 1.5}px, ${Math.random() * 3 - 1.5}px)`;
-                    setTimeout(() => document.body.style.transform = 'translate(0, 0)', 100);
-                }
             }
 
             function triggerFlickerEffect() {
@@ -1078,6 +969,8 @@
             function init() {
                 createNoise();
                 preloadTracks();
+                // Убрали startCountdown()
+
                 playBtn.addEventListener('click', () => {
                     if (!tracks[currentTrackIndex]) loadTrack(0);
                     isPlaying ? pauseTrack() : playTrack();
@@ -1103,17 +996,12 @@
                     if (!audioContext) {
                         initAudioContext();
                         createVisualizerBars();
-                        updateVisualizer();
+                        requestAnimationFrame(updateVisualizer);
                     }
                 }, { once: true });
 
                 renderPlaylist();
                 loadTrack(0);
-                setInterval(() => {
-                    if (Math.random() < 0.2) triggerGlitchEffect();
-                    if (isPlaying && Math.random() < 0.1) triggerFlickerEffect();
-                }, 5000);
-                triggerGlitchEffect();
             }
 
             init();
