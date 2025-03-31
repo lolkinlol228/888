@@ -36,7 +36,7 @@
             align-items: center;
             padding: 20px;
             overflow-x: hidden;
-            overflow-y: auto; /* Прокрутка независима */
+            overflow-y: auto;
         }
 
         .player-container {
@@ -197,19 +197,20 @@
             overflow: hidden;
             position: relative;
             max-width: 100%;
-            will-change: transform; /* Оптимизация анимации */
+            will-change: transform;
             text-shadow: 0 0 3px rgba(196, 17, 17, 0.3);
         }
 
         .long-title {
             display: inline-block;
-            animation: scrollText 15s linear infinite;
-            animation-play-state: paused; /* Остановка по умолчанию */
+            animation: scrollText 10s linear infinite; /* Ускорили для теста */
+            animation-play-state: paused;
             padding-right: 50px;
+            transform: translateZ(0); /* Аппаратное ускорение */
         }
 
         .long-title.playing {
-            animation-play-state: running; /* Запуск при воспроизведении */
+            animation-play-state: running;
         }
 
         @keyframes scrollText {
@@ -405,7 +406,7 @@
             border-radius: 8px;
             box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
             position: relative;
-            user-select: text; /* Взаимодействие с текстом */
+            user-select: text;
             -webkit-user-select: text;
             -moz-user-select: text;
             -ms-user-select: text;
@@ -730,10 +731,11 @@
             const albumArtImg = document.getElementById('albumArtImg');
             const glitchEffect = document.getElementById('glitchEffect');
             const lyricsContent = document.getElementById('lyrics');
+            const lyricsContainer = document.getElementById('lyricsContainer');
 
             let audioContext, analyser, audioSource;
             const audio = new Audio();
-            audio.preload = 'auto'; // Предзагрузка
+            audio.preload = 'auto';
             let currentTrackIndex = 0;
             let isPlaying = false;
             let isShuffle = false;
@@ -741,10 +743,10 @@
             let isDragging = false;
             let lyricsData = [];
             let lastLyricUpdate = 0;
+            let isUserScrollingLyrics = false; // Флаг для отслеживания действий пользователя
 
             const tracks = [
                 { title: "Устал", artist: "frazt", path: "./music/track1.wav", lyricsPath: "./text/track1.lrc" }
-                // Добавьте больше треков здесь
             ];
 
             const covers = [
@@ -784,14 +786,14 @@
                     const height = Math.min(dataArray[index] / 2.5, 100);
                     bar.style.height = `${height}px`;
                 });
-                if (isPlaying) requestAnimationFrame(updateVisualizer); // Только при воспроизведении
+                if (isPlaying) requestAnimationFrame(updateVisualizer);
             }
 
             function initAudioContext() {
                 if (!audioContext) {
                     audioContext = new (window.AudioContext || window.webkitAudioContext)();
                     analyser = audioContext.createAnalyser();
-                    analyser.fftSize = 512; // Уменьшено для производительности
+                    analyser.fftSize = 512;
                     audioSource = audioContext.createMediaElementSource(audio);
                     audioSource.connect(analyser);
                     analyser.connect(audioContext.destination);
@@ -845,7 +847,7 @@
             function updateLyrics() {
                 const currentTime = audio.currentTime;
                 const now = performance.now();
-                if (now - lastLyricUpdate < 100) return; // Ограничение частоты
+                if (now - lastLyricUpdate < 100) return;
                 lastLyricUpdate = now;
 
                 const lines = document.querySelectorAll('.lyric-line');
@@ -875,7 +877,8 @@
                     lines[activeIndex + 1].classList.add('next');
                 }
 
-                if (activeIndex >= 0 && !isDragging) {
+                // Прокрутка только если пользователь не взаимодействует
+                if (activeIndex >= 0 && !isDragging && !isUserScrollingLyrics) {
                     lines[activeIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
             }
@@ -954,7 +957,7 @@
                     playIcon.classList.add('hidden');
                     pauseIcon.classList.remove('hidden');
                     albumArt.classList.add('playing');
-                    songTitle.classList.add('playing'); // Анимация только при воспроизведении
+                    songTitle.classList.add('playing');
                     triggerGlitchEffect();
                     triggerFlickerEffect();
                     updateVisualizer();
@@ -967,7 +970,7 @@
                 playIcon.classList.remove('hidden');
                 pauseIcon.classList.add('hidden');
                 albumArt.classList.remove('playing');
-                songTitle.classList.remove('playing'); // Остановка анимации
+                songTitle.classList.remove('playing');
             }
 
             function nextTrack() {
@@ -1081,13 +1084,13 @@
             function preloadTracks() {
                 tracks.forEach(track => {
                     const preloadAudio = new Audio(track.path);
-                    preloadAudio.preload = 'metadata'; // Предзагрузка метаданных
+                    preloadAudio.preload = 'metadata';
                 });
             }
 
             function init() {
                 createNoise();
-                preloadTracks(); // Предзагрузка треков
+                preloadTracks();
                 playBtn.addEventListener('click', () => {
                     if (!tracks[currentTrackIndex]) loadTrack(0);
                     isPlaying ? pauseTrack() : playTrack();
@@ -1108,6 +1111,16 @@
                 progress.addEventListener('mousedown', startDragging);
                 audio.addEventListener('timeupdate', updateProgress);
                 audio.addEventListener('ended', () => isRepeat ? (audio.currentTime = 0, playTrack()) : nextTrack());
+
+                // Отслеживание взаимодействия пользователя с лирикой
+                lyricsContainer.addEventListener('scroll', () => {
+                    isUserScrollingLyrics = true;
+                    setTimeout(() => isUserScrollingLyrics = false, 2000); // 2 секунды бездействия
+                });
+                lyricsContainer.addEventListener('mousedown', () => {
+                    isUserScrollingLyrics = true;
+                    setTimeout(() => isUserScrollingLyrics = false, 2000);
+                });
 
                 document.body.addEventListener('click', () => {
                     if (!audioContext) {
