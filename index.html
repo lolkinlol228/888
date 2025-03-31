@@ -36,7 +36,7 @@
             align-items: center;
             padding: 20px;
             overflow-x: hidden;
-            transition: transform 0.1s;
+            overflow-y: auto; /* Прокрутка независима */
         }
 
         .player-container {
@@ -48,7 +48,6 @@
             border-radius: 12px;
             box-shadow: 0 0 30px rgba(74, 0, 0, 0.9), inset 0 0 10px rgba(0, 0, 0, 0.5);
             position: relative;
-            transition: transform 0.2s;
         }
 
         .noise {
@@ -182,7 +181,6 @@
             margin: 0 1px;
             height: 5px;
             opacity: 0.8;
-            transition: height 0.05s ease-out;
             border-radius: 2px;
         }
 
@@ -195,19 +193,23 @@
             font-size: 24px;
             color: var(--text);
             margin-bottom: 10px;
-            white-space: normal;
-            word-wrap: break-word;
-            overflow: visible;
-            letter-spacing: 1px;
-            max-height: 60px;
+            white-space: nowrap;
+            overflow: hidden;
+            position: relative;
+            max-width: 100%;
+            will-change: transform; /* Оптимизация анимации */
             text-shadow: 0 0 3px rgba(196, 17, 17, 0.3);
         }
 
         .long-title {
-            animation: scrollText 15s linear infinite;
             display: inline-block;
+            animation: scrollText 15s linear infinite;
+            animation-play-state: paused; /* Остановка по умолчанию */
             padding-right: 50px;
-            white-space: nowrap;
+        }
+
+        .long-title.playing {
+            animation-play-state: running; /* Запуск при воспроизведении */
         }
 
         @keyframes scrollText {
@@ -247,28 +249,26 @@
         .progress {
             height: 100%;
             background-color: var(--highlight);
-            width: 0%;
+            width: 0;
             position: relative;
             border-radius: 2px;
-            transition: width 0.1s ease;
         }
 
         .progress::after {  
-    content: "."; /* Используем текстовую точку */
-    font-size: 70px; /* Увеличиваем размер точки */
-    line-height: 0.7; /* Уменьшаем высоту строки, чтобы точка центрировалась */
-    color: var(--text); /* Цвет точки */
-    position: absolute;  
-    right: -10px; /* Сдвигаем точку, чтобы она находилась на краю */
-    top: -44px; /* Поднимаем точку выше */
-    cursor: grab;  
-}  
+            content: "."; 
+            font-size: 70px; 
+            line-height: 0.7; 
+            color: var(--text); 
+            position: absolute;  
+            right: -10px; 
+            top: -44px; 
+            cursor: grab;  
+        }  
 
-.progress.dragging::after {  
-    color: var(--highlight); /* Меняем цвет при перетаскивании */  
-    cursor: grabbing;  
-}
-
+        .progress.dragging::after {  
+            color: var(--highlight); 
+            cursor: grabbing;  
+        }
 
         .controls {
             display: flex;
@@ -380,7 +380,6 @@
         .song-meta {
             flex-grow: 3;
             white-space: nowrap;
-
             text-overflow: ellipsis;
         }
 
@@ -406,6 +405,10 @@
             border-radius: 8px;
             box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
             position: relative;
+            user-select: text; /* Взаимодействие с текстом */
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
         }
 
         .lyrics-container::-webkit-scrollbar {
@@ -730,23 +733,25 @@
 
             let audioContext, analyser, audioSource;
             const audio = new Audio();
+            audio.preload = 'auto'; // Предзагрузка
             let currentTrackIndex = 0;
             let isPlaying = false;
             let isShuffle = false;
             let isRepeat = false;
             let isDragging = false;
             let lyricsData = [];
+            let lastLyricUpdate = 0;
 
             const tracks = [
                 { title: "Устал", artist: "frazt", path: "./music/track1.wav", lyricsPath: "./text/track1.lrc" }
+                // Добавьте больше треков здесь
             ];
 
             const covers = [
                 "./images/cover1.jpeg",
                 "./images/cover2.jpg",
                 "./images/cover3.jpg",
-                "./images/cover4.jpg",
-                // Добавьте свои изображения
+                "./images/cover4.jpg"
             ];
 
             function getRandomCover() {
@@ -779,14 +784,14 @@
                     const height = Math.min(dataArray[index] / 2.5, 100);
                     bar.style.height = `${height}px`;
                 });
-                requestAnimationFrame(updateVisualizer);
+                if (isPlaying) requestAnimationFrame(updateVisualizer); // Только при воспроизведении
             }
 
             function initAudioContext() {
                 if (!audioContext) {
                     audioContext = new (window.AudioContext || window.webkitAudioContext)();
                     analyser = audioContext.createAnalyser();
-                    analyser.fftSize = 2048;
+                    analyser.fftSize = 512; // Уменьшено для производительности
                     audioSource = audioContext.createMediaElementSource(audio);
                     audioSource.connect(analyser);
                     analyser.connect(audioContext.destination);
@@ -839,6 +844,10 @@
 
             function updateLyrics() {
                 const currentTime = audio.currentTime;
+                const now = performance.now();
+                if (now - lastLyricUpdate < 100) return; // Ограничение частоты
+                lastLyricUpdate = now;
+
                 const lines = document.querySelectorAll('.lyric-line');
                 let activeIndex = -1;
 
@@ -866,7 +875,7 @@
                     lines[activeIndex + 1].classList.add('next');
                 }
 
-                if (activeIndex >= 0) {
+                if (activeIndex >= 0 && !isDragging) {
                     lines[activeIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
             }
@@ -887,8 +896,6 @@
                         document.querySelector('.player-container').classList.add('distort');
                         setTimeout(() => document.querySelector('.player-container').classList.remove('distort'), 400);
                         break;
-                    default:
-                        console.log(`Unknown effect: ${effectName}`);
                 }
             }
 
@@ -898,7 +905,7 @@
                     const item = document.createElement('div');
                     item.className = `playlist-item ${currentTrackIndex === index && isPlaying ? 'playing' : ''}`;
                     item.innerHTML = `
-                        <div class="song-meta">${track.artist} - ${track.title} </div>
+                        <div class="song-meta">${track.artist} - ${track.title}</div>
                         <div class="song-duration">${formatTime(audio.duration || 0)}</div>
                     `;
                     item.addEventListener('click', () => {
@@ -947,8 +954,10 @@
                     playIcon.classList.add('hidden');
                     pauseIcon.classList.remove('hidden');
                     albumArt.classList.add('playing');
+                    songTitle.classList.add('playing'); // Анимация только при воспроизведении
                     triggerGlitchEffect();
                     triggerFlickerEffect();
+                    updateVisualizer();
                 }).catch(err => console.error("Playback error:", err));
             }
 
@@ -958,6 +967,7 @@
                 playIcon.classList.remove('hidden');
                 pauseIcon.classList.add('hidden');
                 albumArt.classList.remove('playing');
+                songTitle.classList.remove('playing'); // Остановка анимации
             }
 
             function nextTrack() {
@@ -996,9 +1006,6 @@
                 const clickX = e.offsetX;
                 const newTime = (clickX / width) * audio.duration;
                 audio.currentTime = newTime;
-                const progressPercent = (newTime / audio.duration) * 100;
-                progress.style.width = `${progressPercent}%`;
-                currentTimeEl.textContent = formatTime(newTime);
                 triggerGlitchEffect();
             }
 
@@ -1071,8 +1078,16 @@
                 });
             }
 
+            function preloadTracks() {
+                tracks.forEach(track => {
+                    const preloadAudio = new Audio(track.path);
+                    preloadAudio.preload = 'metadata'; // Предзагрузка метаданных
+                });
+            }
+
             function init() {
                 createNoise();
+                preloadTracks(); // Предзагрузка треков
                 playBtn.addEventListener('click', () => {
                     if (!tracks[currentTrackIndex]) loadTrack(0);
                     isPlaying ? pauseTrack() : playTrack();
