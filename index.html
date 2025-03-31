@@ -182,38 +182,35 @@
             border-radius: 2px;
         }
 
-        .song-info {
-            margin-bottom: 25px;
-            text-align: center;
-            overflow: hidden;
-        }
+.song-info {
+    margin-bottom: 25px;
+    text-align: center;
+    overflow: hidden;
+}
 
-        .song-title {
-            font-size: 24px;
-            color: var(--text);
-            margin-bottom: 10px;
-            white-space: nowrap;
-            position: relative;
-            max-width: 100%;
-            text-shadow: 0 0 3px rgba(196, 17, 17, 0.3);
-        }
+.song-title {
+    font-size: 24px;
+    color: var(--text);
+    margin-bottom: 10px;
+    white-space: nowrap;
+    position: relative;
+    max-width: 100%;
+}
 
-        .long-title {
-            display: inline-block;
-            transform: translateX(0);
-            will-change: transform;
-            padding-right: 50px;
-        }
+.long-title {
+    display: inline-block;
+    transform: translateX(0);
+    padding-right: 50px;
+}
 
-        .long-title.playing {
-            animation: scrollText 10s linear infinite;
-        }
+.long-title.playing {
+    animation: scrollText 15s linear infinite; /* Увеличили время для плавности */
+}
 
-        @keyframes scrollText {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-100%); }
-        }
-
+@keyframes scrollText {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-100%); }
+}
         .song-artist {
             font-size: 18px;
             color: var(--accent);
