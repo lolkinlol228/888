@@ -99,10 +99,9 @@
             text-transform: uppercase;
             letter-spacing: 3px;
             position: relative;
-            text-shadow: 0 0 5px var(--highlight), 0 0 10px var(--highlight); /* Красное свечение */
+            text-shadow: 0 0 5px var(--highlight), 0 0 10px var(--highlight);
         }
 
-        /* Разбросанные "888" */
         .eight-eight-eight {
             position: absolute;
             font-size: 24px;
@@ -132,6 +131,7 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
+            object-position: center 10%;
             opacity: 0.85;
             transition: transform 0.3s, filter 0.2s;
         }
@@ -366,7 +366,6 @@
             justify-content: space-between;
             transition: background-color 0.2s;
             font-size: 18px;
-            
         }
 
         .playlist-item:hover {
@@ -383,7 +382,6 @@
             white-space: nowrap;
             text-overflow: ellipsis;
             color: var(--text);
-            
         }
 
         .song-duration {
@@ -391,6 +389,8 @@
             margin-left: 15px;
             font-size: 16px;
             color: var(--accent);
+            min-width: 50px;
+            text-align: right;
         }
 
         .lyrics-container {
@@ -548,7 +548,6 @@
             <div class="eight-eight-eight">888</div>
             <div class="eight-eight-eight">888</div>
         </div>
-        <!-- Убрали <div id="countdown"></div> -->
         <div class="album-art" id="albumArt">
             <img id="albumArtImg" src="">
             <div class="album-art-overlay"></div>
@@ -612,400 +611,428 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const playBtn = document.getElementById('playBtn');
-            const playIcon = document.getElementById('playIcon');
-            const pauseIcon = document.getElementById('pauseIcon');
-            const prevBtn = document.getElementById('prevBtn');
-            const nextBtn = document.getElementById('nextBtn');
-            const shuffleBtn = document.getElementById('shuffleBtn');
-            const repeatBtn = document.getElementById('repeatBtn');
-            const progressBar = document.getElementById('progressBar');
-            const progress = document.getElementById('progress');
-            const currentTimeEl = document.getElementById('currentTime');
-            const totalTimeEl = document.getElementById('totalTime');
-            const songTitle = document.getElementById('songTitle');
-            const songArtist = document.getElementById('songArtist');
-            const playlistEl = document.getElementById('playlist');
-            const visualizer = document.getElementById('visualizer');
-            const albumArt = document.getElementById('albumArt');
-            const albumArtImg = document.getElementById('albumArtImg');
-            const glitchEffect = document.getElementById('glitchEffect');
-            const lyricsContent = document.getElementById('lyrics');
+document.addEventListener('DOMContentLoaded', () => {
+    const playBtn = document.getElementById('playBtn');
+    const playIcon = document.getElementById('playIcon');
+    const pauseIcon = document.getElementById('pauseIcon');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const shuffleBtn = document.getElementById('shuffleBtn');
+    const repeatBtn = document.getElementById('repeatBtn');
+    const progressBar = document.getElementById('progressBar');
+    const progress = document.getElementById('progress');
+    const currentTimeEl = document.getElementById('currentTime');
+    const totalTimeEl = document.getElementById('totalTime');
+    const songTitle = document.getElementById('songTitle');
+    const songArtist = document.getElementById('songArtist');
+    const playlistEl = document.getElementById('playlist');
+    const visualizer = document.getElementById('visualizer');
+    const albumArt = document.getElementById('albumArt');
+    const albumArtImg = document.getElementById('albumArtImg');
+    const glitchEffect = document.getElementById('glitchEffect');
+    const lyricsContent = document.getElementById('lyrics');
 
-            let audioContext, analyser, audioSource;
-            const audio = new Audio();
-            audio.preload = 'auto';
-            let currentTrackIndex = 0;
-            let isPlaying = false;
-            let isShuffle = false;
-            let isRepeat = false;
-            let isDragging = false;
-            let lyricsData = [];
-            let lastLyricUpdate = 0;
-            let lastVisualizerUpdate = 0;
+    let audioContext, analyser, audioSource;
+    const audio = new Audio();
+    audio.preload = 'auto';
+    let currentTrackIndex = 0;
+    let isPlaying = false;
+    let isShuffle = false;
+    let isRepeat = false;
+    let isDragging = false;
+    let lyricsData = [];
+    let lastLyricUpdate = 0;
+    let lastVisualizerUpdate = 0;
 
-            const tracks = [
-                { title: "Устал", artist: "frazt", path: "./music/track1.wav", lyricsPath: "./text/track1.lrc" }
-            ];
+    const tracks = [
+        { title: "Устал", artist: "frazt", path: "./music/track1.wav", lyricsPath: "./text/track1.lrc", duration: 0 },
+        { title: "Страх", artist: "frazt", path: "./music/track2.wav", lyricsPath: "./text/track2.lrc", duration: 0 }
+    ];
 
-            const covers = [
-                "./images/cover1.jpeg",
-                "./images/cover2.jpg",
-                "./images/cover3.jpg",
-                "./images/cover4.jpg"
-            ];
+    const covers = [
+        "./images/cover1.jpg"
+    ];
 
-            function getRandomCover() {
-                return covers[Math.floor(Math.random() * covers.length)];
-            }
+    function getRandomCover() {
+        return covers[Math.floor(Math.random() * covers.length)];
+    }
 
-            function formatTime(seconds) {
-                const mins = Math.floor(seconds / 60);
-                const secs = Math.floor(seconds % 60);
-                return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-            }
+    function formatTime(seconds) {
+        if (!seconds || isNaN(seconds)) return "0:00";
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    }
 
-            function createVisualizerBars() {
-                visualizer.innerHTML = '';
-                for (let i = 0; i < 40; i++) {
-                    const bar = document.createElement('div');
-                    bar.className = 'bar';
-                    visualizer.appendChild(bar);
-                }
-            }
-
-            function updateVisualizer(timestamp) {
-                if (timestamp - lastVisualizerUpdate < 16) {
-                    if (isPlaying) requestAnimationFrame(updateVisualizer);
-                    return;
-                }
-                lastVisualizerUpdate = timestamp;
-
-                if (!audioContext || !analyser) return;
-                const dataArray = new Uint8Array(analyser.frequencyBinCount);
-                analyser.getByteFrequencyData(dataArray);
-                const bars = document.querySelectorAll('.bar');
-                bars.forEach((bar, i) => {
-                    const index = Math.floor(i * (dataArray.length / bars.length));
-                    const height = Math.min(dataArray[index] / 2.5, 100);
-                    bar.style.height = `${height}px`;
-                });
-                if (isPlaying) requestAnimationFrame(updateVisualizer);
-            }
-
-            function initAudioContext() {
-                if (!audioContext) {
-                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    analyser = audioContext.createAnalyser();
-                    analyser.fftSize = 512;
-                    audioSource = audioContext.createMediaElementSource(audio);
-                    audioSource.connect(analyser);
-                    analyser.connect(audioContext.destination);
-                }
-            }
-
-            async function loadLyrics(path) {
-                try {
-                    const response = await fetch(path);
-                    if (!response.ok) throw new Error('Lyrics not found');
-                    const text = await response.text();
-                    lyricsData = parseLRC(text);
-                    renderLyrics(lyricsData);
-                } catch (error) {
-                    console.error(error);
-                    lyricsData = [];
-                    lyricsContent.innerHTML = "Lyrics not available.";
-                }
-            }
-
-            function parseLRC(text) {
-                const lines = text.split('\n');
-                const lyrics = [];
-                lines.forEach(line => {
-                    const timeMatch = line.match(/\[(\d+):(\d+\.\d+)\]/);
-                    const effectMatch = line.match(/\[effect:(\w+)\]/);
-                    if (timeMatch) {
-                        const minutes = parseInt(timeMatch[1]);
-                        const seconds = parseFloat(timeMatch[2]);
-                        const time = minutes * 60 + seconds;
-                        const text = line.replace(/\[(\d+):(\d+\.\d+)\]/, '').replace(/\[effect:\w+\]/, '').trim();
-                        const effect = effectMatch ? effectMatch[1] : null;
-                        lyrics.push({ time, text, effect });
-                    }
-                });
-                return lyrics;
-            }
-
-            function renderLyrics(lyrics) {
-                lyricsContent.innerHTML = '';
-                lyrics.forEach(line => {
-                    const div = document.createElement('div');
-                    div.className = 'lyric-line';
-                    div.dataset.time = line.time;
-                    div.dataset.effect = line.effect || '';
-                    div.textContent = line.text;
-                    lyricsContent.appendChild(div);
-                });
-            }
-
-            function updateLyrics() {
-                const currentTime = audio.currentTime;
-                const now = performance.now();
-                if (now - lastLyricUpdate < 100) return;
-                lastLyricUpdate = now;
-
-                const lines = document.querySelectorAll('.lyric-line');
-                let activeIndex = -1;
-
-                lines.forEach((line, index) => {
-                    const time = parseFloat(line.dataset.time);
-                    const nextTime = index < lines.length - 1 ? parseFloat(lines[index + 1].dataset.time) : Infinity;
-
-                    line.classList.remove('previous', 'active', 'next');
-
-                    if (currentTime >= time && currentTime < nextTime) {
-                        line.classList.add('active');
-                        activeIndex = index;
-                        const effect = line.dataset.effect;
-                        if (effect && !line.dataset.triggered) {
-                            triggerEffect(effect);
-                            line.dataset.triggered = 'true';
-                        }
-                    }
-                });
-
-                if (activeIndex > 0) lines[activeIndex - 1].classList.add('previous');
-                if (activeIndex >= 0 && activeIndex < lines.length - 1) lines[activeIndex + 1].classList.add('next');
-            }
-
-            function triggerEffect(effectName) {
-                switch (effectName) {
-                    case 'glitch': triggerGlitchEffect(); break;
-                    case 'flicker': triggerFlickerEffect(); break;
-                    case 'shake':
-                        document.body.classList.add('shake');
-                        setTimeout(() => document.body.classList.remove('shake'), 500);
-                        break;
-                    case 'distort':
-                        document.querySelector('.player-container').classList.add('distort');
-                        setTimeout(() => document.querySelector('.player-container').classList.remove('distort'), 400);
-                        break;
-                }
-            }
-
-            function renderPlaylist() {
-                playlistEl.innerHTML = '';
-                tracks.forEach((track, index) => {
-                    const item = document.createElement('div');
-                    item.className = `playlist-item ${currentTrackIndex === index && isPlaying ? 'playing' : ''}`;
-                    item.innerHTML = `
-                        <div class="song-meta">${track.artist} - ${track.title}</div>
-                        <div class="song-duration">${formatTime(audio.duration || 0)}</div>
-                    `;
-                    item.addEventListener('click', () => {
-                        currentTrackIndex = index;
-                        loadTrack(currentTrackIndex);
-                        playTrack();
-                    });
-                    playlistEl.appendChild(item);
-                });
-            }
-
-            async function loadTrack(index) {
-                const track = tracks[index];
-                audio.src = track.path;
-                songTitle.textContent = track.title;
-                songArtist.textContent = track.artist;
-                albumArtImg.src = getRandomCover();
-                await loadLyrics(track.lyricsPath);
-
-                songTitle.classList.remove('long-title');
-                if (track.title.length > 20) songTitle.classList.add('long-title');
-
-                audio.onloadedmetadata = () => {
-                    totalTimeEl.textContent = formatTime(audio.duration);
-                    renderPlaylist();
-                };
-
-                const playlistItems = document.querySelectorAll('.playlist-item');
-                playlistItems.forEach((item, i) => item.classList.toggle('playing', i === index));
-            }
-
-            function playTrack() {
-                if (audioContext && audioContext.state === 'suspended') audioContext.resume();
-                audio.play().then(() => {
-                    isPlaying = true;
-                    playIcon.classList.add('hidden');
-                    pauseIcon.classList.remove('hidden');
-                    albumArt.classList.add('playing');
-                    songTitle.classList.add('playing');
-                    triggerGlitchEffect();
-                    triggerFlickerEffect();
-                    requestAnimationFrame(updateVisualizer);
-                }).catch(err => console.error("Playback error:", err));
-            }
-
-            function pauseTrack() {
-                audio.pause();
-                isPlaying = false;
-                playIcon.classList.remove('hidden');
-                pauseIcon.classList.add('hidden');
-                albumArt.classList.remove('playing');
-                songTitle.classList.remove('playing');
-            }
-
-            function nextTrack() {
-                if (isShuffle) {
-                    let newIndex;
-                    do {
-                        newIndex = Math.floor(Math.random() * tracks.length);
-                    } while (newIndex === currentTrackIndex && tracks.length > 1);
-                    currentTrackIndex = newIndex;
-                } else {
-                    currentTrackIndex = (currentTrackIndex + 1) % tracks.length;
-                }
-                loadTrack(currentTrackIndex);
-                if (isPlaying) playTrack();
-                triggerGlitchEffect();
-            }
-
-            function prevTrack() {
-                currentTrackIndex = (currentTrackIndex - 1 + tracks.length) % tracks.length;
-                loadTrack(currentTrackIndex);
-                if (isPlaying) playTrack();
-                triggerGlitchEffect();
-            }
-
-            function updateProgress() {
-                if (!isDragging) {
-                    const progressPercent = (audio.currentTime / audio.duration) * 100;
-                    progress.style.width = `${progressPercent}%`;
-                    currentTimeEl.textContent = formatTime(audio.currentTime);
-                }
-                updateLyrics();
-            }
-
-            function setProgress(e) {
-                const width = progressBar.clientWidth;
-                const clickX = e.offsetX;
-                const newTime = (clickX / width) * audio.duration;
-                audio.currentTime = newTime;
-                requestAnimationFrame(() => triggerGlitchEffect());
-            }
-
-            function startDragging(e) {
-                isDragging = true;
-                progress.classList.add('dragging');
-                requestAnimationFrame(() => updateProgressDragging(e));
-                document.addEventListener('mousemove', updateProgressDragging);
-                document.addEventListener('mouseup', stopDragging);
-            }
-
-            function updateProgressDragging(e) {
-                const rect = progressBar.getBoundingClientRect();
-                const clickX = e.clientX - rect.left;
-                const width = progressBar.clientWidth;
-                const progressPercent = Math.max(0, Math.min(100, (clickX / width) * 100));
-                progress.style.width = `${progressPercent}%`;
-                const newTime = (progressPercent / 100) * audio.duration;
-                currentTimeEl.textContent = formatTime(newTime);
-            }
-
-            function stopDragging(e) {
-                isDragging = false;
-                progress.classList.remove('dragging');
-                const rect = progressBar.getBoundingClientRect();
-                const clickX = e.clientX - rect.left;
-                const width = progressBar.clientWidth;
-                const newTime = (clickX / width) * audio.duration;
-                audio.currentTime = newTime;
-                document.removeEventListener('mousemove', updateProgressDragging);
-                document.removeEventListener('mouseup', stopDragging);
-                requestAnimationFrame(() => triggerGlitchEffect());
-            }
-
-            function createNoise() {
-                const noise = document.getElementById('noise');
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                canvas.width = 200;
-                canvas.height = 200;
-                const imgData = ctx.createImageData(canvas.width, canvas.height);
-                const data = imgData.data;
-                for (let i = 0; i < data.length; i += 4) {
-                    const value = Math.random() * 255;
-                    data[i] = value;
-                    data[i + 1] = value;
-                    data[i + 2] = value;
-                    data[i + 3] = 255;
-                }
-                ctx.putImageData(imgData, 0, 0);
-                noise.style.backgroundImage = `url(${canvas.toDataURL('image/png')})`;
-            }
-
-            function triggerGlitchEffect() {
-                glitchEffect.style.animation = 'randomGlitch 0.3s forwards';
-                setTimeout(() => glitchEffect.style.animation = 'none', 300);
-            }
-
-            function triggerFlickerEffect() {
-                const buttons = document.querySelectorAll('.control-btn');
-                buttons.forEach(btn => {
-                    if (Math.random() < 0.5) {
-                        btn.classList.add('flicker');
-                        setTimeout(() => btn.classList.remove('flicker'), 500);
-                    }
-                });
-            }
-
-            function preloadTracks() {
-                tracks.forEach(track => {
-                    const preloadAudio = new Audio(track.path);
+    async function preloadTrackDurations() {
+        try {
+            for (let i = 0; i < tracks.length; i++) {
+                if (tracks[i].duration === 0) {
+                    const preloadAudio = new Audio(tracks[i].path);
                     preloadAudio.preload = 'metadata';
-                });
+                    await new Promise((resolve, reject) => {
+                        preloadAudio.onloadedmetadata = () => {
+                            tracks[i].duration = preloadAudio.duration;
+                            resolve();
+                        };
+                        preloadAudio.onerror = () => {
+                            console.error(`Failed to load metadata for ${tracks[i].title}`);
+                            tracks[i].duration = 0;
+                            resolve(); // Continue even if one track fails
+                        };
+                    });
+                }
             }
+        } catch (error) {
+            console.error('Error preloading track durations:', error);
+        }
+        renderPlaylist(); // Render playlist only after all durations are loaded
+    }
 
-            function init() {
-                createNoise();
-                preloadTracks();
-                // Убрали startCountdown()
+    function createVisualizerBars() {
+        visualizer.innerHTML = '';
+        for (let i = 0; i < 40; i++) {
+            const bar = document.createElement('div');
+            bar.className = 'bar';
+            visualizer.appendChild(bar);
+        }
+    }
 
-                playBtn.addEventListener('click', () => {
-                    if (!tracks[currentTrackIndex]) loadTrack(0);
-                    isPlaying ? pauseTrack() : playTrack();
-                });
-                prevBtn.addEventListener('click', prevTrack);
-                nextBtn.addEventListener('click', nextTrack);
-                shuffleBtn.addEventListener('click', () => {
-                    isShuffle = !isShuffle;
-                    shuffleBtn.classList.toggle('active');
-                    triggerGlitchEffect();
-                });
-                repeatBtn.addEventListener('click', () => {
-                    isRepeat = !isRepeat;
-                    repeatBtn.classList.toggle('active');
-                    triggerGlitchEffect();
-                });
-                progressBar.addEventListener('click', setProgress);
-                progress.addEventListener('mousedown', startDragging);
-                audio.addEventListener('timeupdate', updateProgress);
-                audio.addEventListener('ended', () => isRepeat ? (audio.currentTime = 0, playTrack()) : nextTrack());
+    function updateVisualizer(timestamp) {
+        if (timestamp - lastVisualizerUpdate < 16) {
+            if (isPlaying) requestAnimationFrame(updateVisualizer);
+            return;
+        }
+        lastVisualizerUpdate = timestamp;
 
-                document.body.addEventListener('click', () => {
-                    if (!audioContext) {
-                        initAudioContext();
-                        createVisualizerBars();
-                        requestAnimationFrame(updateVisualizer);
-                    }
-                }, { once: true });
-
-                renderPlaylist();
-                loadTrack(0);
-            }
-
-            init();
+        if (!audioContext || !analyser) return;
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        analyser.getByteFrequencyData(dataArray);
+        const bars = document.querySelectorAll('.bar');
+        bars.forEach((bar, i) => {
+            const index = Math.floor(i * (dataArray.length / bars.length));
+            const height = Math.min(dataArray[index] / 2.5, 100);
+            bar.style.height = `${height}px`;
         });
+        if (isPlaying) requestAnimationFrame(updateVisualizer);
+    }
+
+    function initAudioContext() {
+        if (!audioContext) {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            analyser = audioContext.createAnalyser();
+            analyser.fftSize = 512;
+            audioSource = audioContext.createMediaElementSource(audio);
+            audioSource.connect(analyser);
+            analyser.connect(audioContext.destination);
+        }
+    }
+
+    async function loadLyrics(path) {
+        try {
+            const response = await fetch(path);
+            if (!response.ok) throw new Error('Lyrics not found');
+            const text = await response.text();
+            lyricsData = parseLRC(text);
+            renderLyrics(lyricsData);
+        } catch (error) {
+            console.error(error);
+            lyricsData = [];
+            lyricsContent.innerHTML = "Lyrics not available.";
+        }
+    }
+
+    function parseLRC(text) {
+        const lines = text.split('\n');
+        const lyrics = [];
+        lines.forEach(line => {
+            const timeMatch = line.match(/\[(\d+):(\d+\.\d+)\]/);
+            const effectMatch = line.match(/\[effect:(\w+)\]/);
+            if (timeMatch) {
+                const minutes = parseInt(timeMatch[1]);
+                const seconds = parseFloat(timeMatch[2]);
+                const time = minutes * 60 + seconds;
+                const text = line.replace(/\[(\d+):(\d+\.\d+)\]/, '').replace(/\[effect:\w+\]/, '').trim();
+                const effect = effectMatch ? effectMatch[1] : null;
+                lyrics.push({ time, text, effect });
+            }
+        });
+        return lyrics;
+    }
+
+    function renderLyrics(lyrics) {
+        lyricsContent.innerHTML = '';
+        lyrics.forEach(line => {
+            const div = document.createElement('div');
+            div.className = 'lyric-line';
+            div.dataset.time = line.time;
+            div.dataset.effect = line.effect || '';
+            div.textContent = line.text;
+            lyricsContent.appendChild(div);
+        });
+    }
+
+    function updateLyrics() {
+        const currentTime = audio.currentTime;
+        const now = performance.now();
+        if (now - lastLyricUpdate < 100) return;
+        lastLyricUpdate = now;
+
+        const lines = document.querySelectorAll('.lyric-line');
+        let activeIndex = -1;
+
+        lines.forEach((line, index) => {
+            const time = parseFloat(line.dataset.time);
+            const nextTime = index < lines.length - 1 ? parseFloat(lines[index + 1].dataset.time) : Infinity;
+
+            line.classList.remove('previous', 'active', 'next');
+
+            if (currentTime >= time && currentTime < nextTime) {
+                line.classList.add('active');
+                activeIndex = index;
+                const effect = line.dataset.effect;
+                if (effect && !line.dataset.triggered) {
+                    triggerEffect(effect);
+                    line.dataset.triggered = 'true';
+                }
+            }
+        });
+
+        if (activeIndex > 0) lines[activeIndex - 1].classList.add('previous');
+        if (activeIndex >= 0 && activeIndex < lines.length - 1) lines[activeIndex + 1].classList.add('next');
+    }
+
+    function triggerEffect(effectName) {
+        switch (effectName) {
+            case 'glitch': triggerGlitchEffect(); break;
+            case 'flicker': triggerFlickerEffect(); break;
+            case 'shake':
+                document.body.classList.add('shake');
+                setTimeout(() => document.body.classList.remove('shake'), 500);
+                break;
+            case 'distort':
+                document.querySelector('.player-container').classList.add('distort');
+                setTimeout(() => document.querySelector('.player-container').classList.remove('distort'), 400);
+                break;
+        }
+    }
+
+    function renderPlaylist() {
+        playlistEl.innerHTML = '';
+        tracks.forEach((track, index) => {
+            const item = document.createElement('div');
+            item.className = `playlist-item ${currentTrackIndex === index ? 'playing' : ''}`;
+            item.innerHTML = `
+                <div class="song-meta">${track.artist} - ${track.title}</div>
+                <div class="song-duration">${formatTime(track.duration)}</div>
+            `;
+            item.addEventListener('click', () => {
+                currentTrackIndex = index;
+                loadTrack(currentTrackIndex);
+                pauseTrack();
+            });
+            playlistEl.appendChild(item);
+        });
+    }
+
+    async function loadTrack(index) {
+        const track = tracks[index];
+        audio.src = track.path;
+        songTitle.textContent = track.title;
+        songArtist.textContent = track.artist;
+        albumArtImg.src = getRandomCover();
+        await loadLyrics(track.lyricsPath);
+
+        songTitle.classList.remove('long-title');
+        if (track.title.length > 20) songTitle.classList.add('long-title');
+
+        // Update total time and ensure duration is set
+        audio.onloadedmetadata = () => {
+            totalTimeEl.textContent = formatTime(audio.duration);
+            if (tracks[index].duration === 0) {
+                tracks[index].duration = audio.duration; // Update duration if not preloaded
+                renderPlaylist(); // Re-render to reflect updated duration
+            }
+        };
+
+        const playlistItems = document.querySelectorAll('.playlist-item');
+        playlistItems.forEach((item, i) => item.classList.toggle('playing', i === index));
+    }
+
+    function playTrack() {
+        if (audioContext && audioContext.state === 'suspended') audioContext.resume();
+        audio.play().then(() => {
+            isPlaying = true;
+            playIcon.classList.add('hidden');
+            pauseIcon.classList.remove('hidden');
+            albumArt.classList.add('playing');
+            songTitle.classList.add('playing');
+            triggerGlitchEffect();
+            triggerFlickerEffect();
+            requestAnimationFrame(updateVisualizer);
+        }).catch(err => console.error("Playback error:", err));
+    }
+
+    function pauseTrack() {
+        audio.pause();
+        isPlaying = false;
+        playIcon.classList.remove('hidden');
+        pauseIcon.classList.add('hidden');
+        albumArt.classList.remove('playing');
+        songTitle.classList.remove('playing');
+    }
+
+    function nextTrack() {
+        if (isShuffle) {
+            let newIndex;
+            do {
+                newIndex = Math.floor(Math.random() * tracks.length);
+            } while (newIndex === currentTrackIndex && tracks.length > 1);
+            currentTrackIndex = newIndex;
+        } else {
+            currentTrackIndex = (currentTrackIndex + 1) % tracks.length;
+        }
+        loadTrack(currentTrackIndex);
+        if (isPlaying) playTrack();
+        triggerGlitchEffect();
+    }
+
+    function prevTrack() {
+        currentTrackIndex = (currentTrackIndex - 1 + tracks.length) % tracks.length;
+        loadTrack(currentTrackIndex);
+        if (isPlaying) playTrack();
+        triggerGlitchEffect();
+    }
+
+    function updateProgress() {
+        if (!isDragging) {
+            const progressPercent = (audio.currentTime / audio.duration) * 100;
+            progress.style.width = `${progressPercent}%`;
+            currentTimeEl.textContent = formatTime(audio.currentTime);
+        }
+        updateLyrics();
+    }
+
+    function setProgress(e) {
+        const width = progressBar.clientWidth;
+        const clickX = e.offsetX;
+        const newTime = (clickX / width) * audio.duration;
+        audio.currentTime = newTime;
+        requestAnimationFrame(() => triggerGlitchEffect());
+    }
+
+    function startDragging(e) {
+        isDragging = true;
+        progress.classList.add('dragging');
+        requestAnimationFrame(() => updateProgressDragging(e));
+        document.addEventListener('mousemove', updateProgressDragging);
+        document.addEventListener('mouseup', stopDragging);
+    }
+
+    function updateProgressDragging(e) {
+        const rect = progressBar.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const width = progressBar.clientWidth;
+        const progressPercent = Math.max(0, Math.min(100, (clickX / width) * 100));
+        progress.style.width = `${progressPercent}%`;
+        const newTime = (progressPercent / 100) * audio.duration;
+        currentTimeEl.textContent = formatTime(newTime);
+    }
+
+    function stopDragging(e) {
+        isDragging = false;
+        progress.classList.remove('dragging');
+        const rect = progressBar.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const width = progressBar.clientWidth;
+        const newTime = (clickX / width) * audio.duration;
+        audio.currentTime = newTime;
+        document.removeEventListener('mousemove', updateProgressDragging);
+        document.removeEventListener('mouseup', stopDragging);
+        requestAnimationFrame(() => triggerGlitchEffect());
+    }
+
+    function createNoise() {
+        const noise = document.getElementById('noise');
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 200;
+        canvas.height = 200;
+        const imgData = ctx.createImageData(canvas.width, canvas.height);
+        const data = imgData.data;
+        for (let i = 0; i < data.length; i += 4) {
+            const value = Math.random() * 255;
+            data[i] = value;
+            data[i + 1] = value;
+            data[i + 2] = value;
+            data[i + 3] = 255;
+        }
+        ctx.putImageData(imgData, 0, 0);
+        noise.style.backgroundImage = `url(${canvas.toDataURL('image/png')})`;
+    }
+
+    function triggerGlitchEffect() {
+        glitchEffect.style.animation = 'randomGlitch 0.3s forwards';
+        setTimeout(() => glitchEffect.style.animation = 'none', 300);
+    }
+
+    function triggerFlickerEffect() {
+        const buttons = document.querySelectorAll('.control-btn');
+        buttons.forEach(btn => {
+            if (Math.random() < 0.5) {
+                btn.classList.add('flicker');
+                setTimeout(() => btn.classList.remove('flicker'), 500);
+            }
+        });
+    }
+
+    function preloadTracks() {
+        tracks.forEach(track => {
+            const preloadAudio = new Audio(track.path);
+            preloadAudio.preload = 'metadata';
+        });
+    }
+
+    function init() {
+        createNoise();
+        preloadTracks();
+        preloadTrackDurations().then(() => {
+            loadTrack(0);
+            pauseTrack();
+        });
+
+        playBtn.addEventListener('click', () => {
+            if (!tracks[currentTrackIndex]) loadTrack(0);
+            isPlaying ? pauseTrack() : playTrack();
+        });
+        prevBtn.addEventListener('click', prevTrack);
+        nextBtn.addEventListener('click', nextTrack);
+        shuffleBtn.addEventListener('click', () => {
+            isShuffle = !isShuffle;
+            shuffleBtn.classList.toggle('active');
+            triggerGlitchEffect();
+        });
+        repeatBtn.addEventListener('click', () => {
+            isRepeat = !isRepeat;
+            repeatBtn.classList.toggle('active');
+            triggerGlitchEffect();
+        });
+        progressBar.addEventListener('click', setProgress);
+        progress.addEventListener('mousedown', startDragging);
+        audio.addEventListener('timeupdate', updateProgress);
+        audio.addEventListener('ended', () => isRepeat ? (audio.currentTime = 0, playTrack()) : nextTrack());
+
+        document.body.addEventListener('click', () => {
+            if (!audioContext) {
+                initAudioContext();
+                createVisualizerBars();
+                requestAnimationFrame(updateVisualizer);
+            }
+        }, { once: true });
+    }
+
+    init();
+});
     </script>
 </body>
 </html>
